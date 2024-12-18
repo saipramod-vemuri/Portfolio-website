@@ -1,0 +1,53 @@
+const express = require('express');
+const bodyParser = require('body-parser');
+const cors = require('cors');
+const nodemailer = require('nodemailer');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Middleware
+app.use(cors());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
+// Serve static files (optional, if needed for hosting front-end)
+app.use(express.static('public'));
+
+// Endpoint for contact form
+app.post('/contact', (req, res) => {
+    const { fullName, email, message } = req.body;
+
+    if (!fullName || !email || !message) {
+        return res.status(400).json({ message: 'All fields are required!' });
+    }
+
+    // Nodemailer transport for sending emails
+    const transporter = nodemailer.createTransport({
+        service: 'gmail', // Change to your email service
+        auth: {
+            user: 'your-email@example.com', // Your email address
+            pass: 'your-email-password',   // Your email password (use environment variables for security)
+        },
+    });
+
+    const mailOptions = {
+        from: email,
+        to: 'your-email@example.com', // Your email to receive messages
+        subject: `Portfolio Contact from ${fullName}`,
+        text: `Name: ${fullName}\nEmail: ${email}\nMessage: ${message}`,
+    };
+
+    transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+            console.error('Error sending email:', error);
+            return res.status(500).json({ message: 'Failed to send message.' });
+        }
+        res.status(200).json({ message: 'Message sent successfully!' });
+    });
+});
+
+// Start server
+app.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
+});
